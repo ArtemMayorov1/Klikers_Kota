@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кликай Кота — Advanced</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: #2d3436;
+        }
+
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, #ff9a9e, #fecfef);
+            padding: 10px 20px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 130px;
+            box-shadow: 0 5px 15px rgba(255,154,158,0.3);
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #d63031;
+        }
+
+        .stat-label {
+            color: #636e72;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .main-cat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .cat-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            cursor: pointer;
+        }
+
+        .cat {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 8px solid white;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            pointer-events: none;
+            transition: transform 0.05s;
+        }
+
+        .cat-container:active .cat {
+            transform: scale(0.95);
+        }
+
+        .cat.shake {
+            animation: shake 0.1s ease-in-out;
+        }
+
+        @keyframes shake {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.92); }
+            100% { transform: scale(1); }
+        }
+
+        .energy-bar-wrap {
+            width: 300px;
+            margin-top: 25px;
+        }
+
+        .energy-bar {
+            width: 100%;
+            height: 24px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid white;
+        }
+
+        .energy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00b894, #55efc4);
+            transition: width 0.1s linear;
+        }
+
+        .upgrades, .shop {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        h3 {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .upgrade-grid, .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .upgrade, .cat-card {
+            background: #f1f2f6;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .upgrade:hover { background: #dfe4ea; }
+        .upgrade.disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .cat-card.active {
+            border-color: #00b894;
+            background: #e6fffb;
+        }
+
+        .cat-image-small {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: block;
+            border: 2px solid #fff;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #6c5ce7;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+
+        .btn:disabled { background: #b2bec3; cursor: not-allowed; }
+        .btn:hover:not(:disabled) { background: #5849c4; transform: translateY(-2px); }
+
+        .coin-float {
+            position: absolute;
+            font-weight: bold;
+            color: #f1c40f;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            pointer-events: none;
+            animation: float-up 0.8s ease-out forwards;
+            z-index: 100;
+        }
+
+        @keyframes float-up {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+
+        #save-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            opacity: 0;
+            transition: 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div id="save-status">Игра сохранена!</div>
+
+    <div class="game-container">
+        <div class="header">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="money">0</div>
+                    <div class="stat-label">💰 Монеты</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="clickValueDisplay">1</div>
+                    <div class="stat-label">👆 Клик</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="passiveValueDisplay">0</div>
+                    <div class="stat-label">⏳ Авто</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="energyText">100 / 100</div>
+                    <div class="stat-label">⚡ Энергия</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-cat">
+            <div class="cat-container" id="catContainer">
+                <img src="" class="cat" id="mainCat" alt="Кот">
+            </div>
+            <div class="energy-bar-wrap">
+                <div class="energy-bar">
+                    <div class="energy-fill" id="energyFill"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="upgrades">
+            <h3>🛠 Улучшения</h3>
+            <div class="upgrade-grid">
+                <div class="upgrade" id="upg-click" onclick="game.buyUpgrade('click')">
+                    <strong>Сила клика</strong>
+                    <div>Цена: <span id="clickUpgradePrice">50</span> 💰</div>
+                    <small>Увеличить доход</small>
+                </div>
+                <div class="upgrade" id="upg-energy" onclick="game.buyUpgrade('energy')">
+                    <strong>Объем энергии</strong>
+                    <div>Цена: <span id="energyUpgradePrice">100</span> 💰</div>
+                    <small>Лимит +50</small>
+                </div>
+                <div class="upgrade" id="upg-passive" onclick="game.buyUpgrade('passive')">
+                    <strong>Авто-кормушка</strong>
+                    <div>Цена: <span id="passiveUpgradePrice">200</span> 💰</div>
+                    <small>+1 монета/сек</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="shop">
+            <h3>🏪 Твои коты</h3>
+            <div class="shop-grid" id="shopGrid"></div>
+            <button class="btn" style="margin-top:20px; background: #e74c3c;" onclick="game.resetGame()">Сбросить прогресс</button>
+        </div>
+    </div>
+
+    <script>
+        class CatClicker {
+            constructor() {
+                // Данные котов (константы)
+                this.catsData = [
+                    { id: 1, name: 'Барсик', price: 0, power: 1, regen: 0.5, img: 'https://raw.githubusercontent.com/ArtemMayorov1/Klikers_Kota/main/Cat.jpg' },
+                    { id: 2, name: 'Кузя', price: 250, power: 3, regen: 0.8, img: 'https://github.com/ArtemMayorov1/Klikers_Kota/blob/main/IMG_4338.JPG?raw=true' },
+                    { id: 3, name: 'Кот', price: 1000, power: 8, regen: 1.5, img: 'https://raw.githubusercontent.com/ArtemMayorov1/Klikers_Kota/main/Cat.jpg' },
+                    { id: 4, name: 'Кошак', price: 5000, power: 20, regen: 3.0, img: 'https://raw.githubusercontent.com/ArtemMayorov1/Klikers_Kota/main/Cat2.jpg' }
+                ];
+
+                // Состояние по умолчанию
+                this.defaultState = {
+                    money: 0,
+                    bonusClickValue: 0,
+                    maxEnergy: 100,
+                    energy: 100,
+                    passiveIncome: 0,
+                    currentCatId: 1,
+                    ownedCats: [1],
+                    upgrades: {
+                        click: { price: 50, level: 0 },
+                        energy: { price: 100, level: 0 },
+                        passive: { price: 200, level: 0 }
+                    }
+                };
+
+                this.loadGame();
+                this.init();
+            }
+
+            init() {
+                this.loadCat();
+                this.updateUI();
+                this.renderShop();
+                
+                document.getElementById('catContainer').addEventListener('mousedown', (e) => this.handleClick(e));
+                
+                // Основной цикл (10 раз в сек)
+                setInterval(() => this.tick(), 100);
+                // Цикл автосохранения (каждые 5 сек)
+                setInterval(() => this.saveGame(), 5000);
+            }
+
+            get currentPower() {
+                const cat = this.catsData.find(c => c.id === this.currentCatId);
+                return (cat ? cat.power : 1) + this.bonusClickValue;
+            }
+
+            handleClick(e) {
+                if (this.energy >= 1) {
+                    this.energy -= 1;
+                    this.money += this.currentPower;
+                    
+                    this.createCoinEffect(e.clientX, e.clientY, `+${this.currentPower}`);
+                    this.animateCat();
+                    this.updateUI();
+                }
+            }
+
+            animateCat() {
+                const img = document.getElementById('mainCat');
+                img.classList.remove('shake');
+                void img.offsetWidth; 
+                img.classList.add('shake');
+            }
+
+            createCoinEffect(x, y, text) {
+                const el = document.createElement('div');
+                el.className = 'coin-float';
+                el.innerText = text;
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 800);
+            }
+
+            buyUpgrade(type) {
+                const upg = this.upgrades[type];
+                if (this.money >= upg.price) {
+                    this.money -= upg.price;
+                    if (type === 'click') {
+                        this.bonusClickValue += 1;
+                    } else if (type === 'energy') {
+                        this.maxEnergy += 50;
+                        this.energy += 50;
+                    } else if (type === 'passive') {
+                        this.passiveIncome += 1;
+                    }
+                    upg.level++;
+                    upg.price = Math.floor(upg.price * 1.6);
+                    this.updateUI();
+                    this.renderShop(); // Перерендерить кнопки котов, если деньги изменились
+                }
+            }
+
+            buyCat(id) {
+                const cat = this.catsData.find(c => c.id === id);
+                if (!this.ownedCats.includes(id)) {
+                    if (this.money >= cat.price) {
+                        this.money -= cat.price;
+                        this.ownedCats.push(id);
+                        this.selectCat(id);
+                    }
+                } else {
+                    this.selectCat(id);
+                }
+            }
+
+            selectCat(id) {
+                this.currentCatId = id;
+                this.loadCat();
+                this.updateUI();
+                this.renderShop();
+            }
+
+            loadCat() {
+                const cat = this.catsData.find(c => c.id === this.currentCatId);
+                if (cat) document.getElementById('mainCat').src = cat.img;
+            }
+
+            tick() {
+                const cat = this.catsData.find(c => c.id === this.currentCatId);
+                
+                // Регенерация энергии
+                if (this.energy < this.maxEnergy) {
+                    this.energy = Math.min(this.maxEnergy, this.energy + (cat.regen / 10));
+                }
+
+                // Пассивный доход (делим на 10, так как тик 100мс)
+                if (this.passiveIncome > 0) {
+                    this.money += (this.passiveIncome / 10);
+                }
+
+                this.updateUI();
+            }
+
+            updateUI() {
+                document.getElementById('money').innerText = Math.floor(this.money);
+                document.getElementById('clickValueDisplay').innerText = this.currentPower;
+                document.getElementById('passiveValueDisplay').innerText = this.passiveIncome;
+                document.getElementById('energyText').innerText = `${Math.floor(this.energy)} / ${this.maxEnergy}`;
+                document.getElementById('energyFill').style.width = `${(this.energy / this.maxEnergy) * 100}%`;
+                
+                // Обновление цен и состояния кнопок улучшений
+                for (let key in this.upgrades) {
+                    const upg = this.upgrades[key];
+                    const priceEl = document.getElementById(`${key}UpgradePrice`);
+                    const containerEl = document.getElementById(`upg-${key}`);
+                    if (priceEl) priceEl.innerText = upg.price;
+                    if (containerEl) {
+                        if (this.money < upg.price) containerEl.classList.add('disabled');
+                        else containerEl.classList.remove('disabled');
+                    }
+                }
+            }
+
+            renderShop() {
+                const grid = document.getElementById('shopGrid');
+                grid.innerHTML = '';
+                this.catsData.forEach(cat => {
+                    const isOwned = this.ownedCats.includes(cat.id);
+                    const isActive = this.currentCatId === cat.id;
+                    const canAfford = this.money >= cat.price;
+                    
+                    const card = document.createElement('div');
+                    card.className = `cat-card ${isActive ? 'active' : ''}`;
+                    card.innerHTML = `
+                        <img src="${cat.img}" class="cat-image-small">
+                        <div><strong>${cat.name}</strong></div>
+                        <div style="font-size: 0.8em; color: #666">Сила: ${cat.power} | Реген: ${cat.regen}</div>
+                        <button class="btn" 
+                            ${(!isOwned && !canAfford) ? 'disabled' : ''} 
+                            onclick="game.buyCat(${cat.id})">
+                            ${isOwned ? (isActive ? 'Выбран' : 'Выбрать') : cat.price + ' 💰'}
+                        </button>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+
+            // Метод сохранения
+            saveGame() {
+                const state = {
+                    money: this.money,
+                    bonusClickValue: this.bonusClickValue,
+                    maxEnergy: this.maxEnergy,
+                    energy: this.energy,
+                    passiveIncome: this.passiveIncome,
+                    currentCatId: this.currentCatId,
+                    ownedCats: this.ownedCats,
+                    upgrades: this.upgrades
+                };
+                localStorage.setItem('catClickerSave', JSON.stringify(state));
+                this.showSaveIndicator();
+            }
+
+            // Метод загрузки
+            loadGame() {
+                const saved = localStorage.getItem('catClickerSave');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    Object.assign(this, data);
+                } else {
+                    Object.assign(this, this.defaultState);
+                }
+            }
+
+            // Сброс игры
+            resetGame() {
+                if (confirm('Вы уверены, что хотите обнулить весь прогресс?')) {
+                    localStorage.removeItem('catClickerSave');
+                    location.reload();
+                }
+            }
+
+            showSaveIndicator() {
+                const el = document.getElementById('save-status');
+                el.style.opacity = '1';
+                setTimeout(() => el.style.opacity = '0', 2000);
+            }
+        }
+
+        const game = new CatClicker();
+
+        // Сохранение перед закрытием вкладки
+        window.addEventListener('beforeunload', () => game.saveGame());
+    </script>
+</body>
+</html>
